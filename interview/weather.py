@@ -1,3 +1,4 @@
+import json
 from typing import Any, Iterable, Generator
 
 class WeatherProcessor:
@@ -62,17 +63,17 @@ class WeatherProcessor:
             station['low'] = min(station['low'], temperature)
             station['last_timestamp'] = timestamp
 
-    def get_snapshot(self) -> dict[str, Any]:
+    def get_snapshot(self) -> str:
         """
         Generate a snapshot of the current weather data.
         
         Returns:
-            dict: A dictionary containing:
+            str: A JSON string containing:
                 - type (str): Always "snapshot"
                 - asOf (int): Timestamp of the latest data
                 - stations (dict): Dictionary of station data with high/low temperatures
         """
-        return {
+        data = {
             "type": "snapshot",
             "asOf": self.last_timestamp,
             "stations": {
@@ -80,25 +81,27 @@ class WeatherProcessor:
                 for name, data in self.stations.items()
             }
         }
+        return json.dumps(data)
 
-    def reset(self) -> dict[str, Any]:
+    def reset(self) -> str:
         """
         Reset all weather data and return a reset confirmation.
         
         Returns:
-            dict: A dictionary containing:
+            str: A JSON string containing:
                 - type (str): Always "reset"
                 - asOf (int): Timestamp when the reset occurred
         """
         reset_timestamp = self.last_timestamp
         self.stations.clear()
         self.last_timestamp = 0
-        return {
+        data = {
             "type": "reset",
             "asOf": reset_timestamp
         }
+        return json.dumps(data)
 
-def process_events(events: Iterable[dict[str, Any]]) -> Generator[dict[str, Any], None, None]:
+def process_events(events: Iterable[dict[str, Any]]) -> Generator[str, None, None]:
     """
     Process a stream of weather events and control commands.
     
@@ -108,7 +111,7 @@ def process_events(events: Iterable[dict[str, Any]]) -> Generator[dict[str, Any]
             - A control event with commands (snapshot/reset)
     
     Yields:
-        dict: Response events for control commands (snapshots and reset confirmations)
+        str: JSON strings for control commands (snapshots and reset confirmations)
     
     Raises:
         ValueError: If an event is invalid or processing fails

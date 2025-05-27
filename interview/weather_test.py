@@ -1,4 +1,5 @@
 import pytest
+import json
 from . import weather
 from typing import Any
 
@@ -94,8 +95,9 @@ def test_get_snapshot():
     for sample in samples:
         processor.process_sample(sample)
     
-    # Get snapshot
-    snapshot = processor.get_snapshot()
+    # Get snapshot and parse JSON
+    snapshot_json = processor.get_snapshot()
+    snapshot = json.loads(snapshot_json)
     
     # Verify snapshot format and data
     assert snapshot["type"] == "snapshot"
@@ -134,12 +136,13 @@ def test_reset():
     for sample in samples:
         processor.process_sample(sample)
     
-    # Reset data
-    reset_response = processor.reset()
+    # Reset data and parse JSON
+    reset_json = processor.reset()
+    reset = json.loads(reset_json)
     
     # Verify reset response
-    assert reset_response["type"] == "reset"
-    assert reset_response["asOf"] == 1001
+    assert reset["type"] == "reset"
+    assert reset["asOf"] == 1001
     
     # Verify data is cleared
     assert len(processor.stations) == 0
@@ -202,29 +205,33 @@ def test_process_events():
     # Verify output count
     assert len(outputs) == 4  # Two snapshots, one reset, and one final snapshot
     
-    # Verify first snapshot
-    assert outputs[0]["type"] == "snapshot"
-    assert outputs[0]["asOf"] == 1000
-    assert outputs[0]["stations"]["Station1"]["high"] == 25.5
-    assert outputs[0]["stations"]["Station1"]["low"] == 25.5
+    # Parse and verify first snapshot
+    snapshot1 = json.loads(outputs[0])
+    assert snapshot1["type"] == "snapshot"
+    assert snapshot1["asOf"] == 1000
+    assert snapshot1["stations"]["Station1"]["high"] == 25.5
+    assert snapshot1["stations"]["Station1"]["low"] == 25.5
     
-    # Verify second snapshot
-    assert outputs[1]["type"] == "snapshot"
-    assert outputs[1]["asOf"] == 1001
-    assert outputs[1]["stations"]["Station1"]["high"] == 25.5
-    assert outputs[1]["stations"]["Station1"]["low"] == 25.5
-    assert outputs[1]["stations"]["Station2"]["high"] == 20.0
-    assert outputs[1]["stations"]["Station2"]["low"] == 20.0
+    # Parse and verify second snapshot
+    snapshot2 = json.loads(outputs[1])
+    assert snapshot2["type"] == "snapshot"
+    assert snapshot2["asOf"] == 1001
+    assert snapshot2["stations"]["Station1"]["high"] == 25.5
+    assert snapshot2["stations"]["Station1"]["low"] == 25.5
+    assert snapshot2["stations"]["Station2"]["high"] == 20.0
+    assert snapshot2["stations"]["Station2"]["low"] == 20.0
     
-    # Verify reset response
-    assert outputs[2]["type"] == "reset"
-    assert outputs[2]["asOf"] == 1001
+    # Parse and verify reset response
+    reset = json.loads(outputs[2])
+    assert reset["type"] == "reset"
+    assert reset["asOf"] == 1001
     
-    # Verify final snapshot
-    assert outputs[3]["type"] == "snapshot"
-    assert outputs[3]["asOf"] == 1002
-    assert outputs[3]["stations"]["Station3"]["high"] == 30.0
-    assert outputs[3]["stations"]["Station3"]["low"] == 30.0
+    # Parse and verify final snapshot
+    snapshot3 = json.loads(outputs[3])
+    assert snapshot3["type"] == "snapshot"
+    assert snapshot3["asOf"] == 1002
+    assert snapshot3["stations"]["Station3"]["high"] == 30.0
+    assert snapshot3["stations"]["Station3"]["low"] == 30.0
 
 def test_invalid_input():
     """Test invalid input handling"""
